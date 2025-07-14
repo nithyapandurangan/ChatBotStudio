@@ -5,9 +5,9 @@ import ReactFlow, {
   MiniMap,
   Controls,
   Background,
-  useNodesState,
-  useEdgesState,
   useReactFlow,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from 'reactflow';
 
 import 'reactflow/dist/style.css';
@@ -17,14 +17,22 @@ const nodeTypes = {
   textNode: TextNode
 };
 
-// Inner component that has access to useReactFlow
-function FlowCanvasInner({ onNodeSelect }) {
-  const initialNodes = [];
-  const initialEdges = [];
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+function FlowCanvasInner({ onNodeSelect, nodes, setNodes, edges, setEdges }) {
   const reactFlowInstance = useReactFlow();
+
+  const onNodesChange = useCallback(
+    (changes) => {
+      setNodes((nds) => applyNodeChanges(changes, nds));
+    },
+    [setNodes]
+  );
+
+  const onEdgesChange = useCallback(
+    (changes) => {
+      setEdges((eds) => applyEdgeChanges(changes, eds));
+    },
+    [setEdges]
+  );
 
   const onConnect = useCallback((params) => {
     setEdges((eds) => addEdge(params, eds));
@@ -44,7 +52,6 @@ function FlowCanvasInner({ onNodeSelect }) {
       return;
     }
 
-    // Get the position relative to the React Flow canvas
     const position = reactFlowInstance.screenToFlowPosition({
       x: event.clientX,
       y: event.clientY,
@@ -83,10 +90,16 @@ function FlowCanvasInner({ onNodeSelect }) {
   );
 }
 
-export default function FlowCanvas({ onNodeSelect }) {
+export default function FlowCanvas({ onNodeSelect, nodes, setNodes, edges, setEdges }) {
   return (
     <ReactFlowProvider>
-      <FlowCanvasInner onNodeSelect={onNodeSelect} />
+      <FlowCanvasInner 
+        onNodeSelect={onNodeSelect}
+        nodes={nodes}
+        setNodes={setNodes}
+        edges={edges}
+        setEdges={setEdges}
+      />
     </ReactFlowProvider>
   );
 }

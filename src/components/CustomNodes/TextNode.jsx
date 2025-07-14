@@ -2,9 +2,13 @@ import { Handle, Position } from 'reactflow';
 
 export default function TextNode({ data, selected }) {
   return (
-    <div className={`bg-white border-2 rounded-lg shadow-md px-4 py-3 min-w-[200px] ${
-      selected ? 'border-blue-500 shadow-lg' : 'border-gray-300'
-    }`}>
+    <div className={`
+      bg-white rounded-lg shadow-md px-4 py-3 min-w-[200px] transition-all
+      ${selected 
+        ? 'ring-2 ring-blue-500 shadow-lg scale-105' 
+        : 'border border-gray-300 hover:border-blue-200'
+      }
+    `}>
       {/* Node Header */}
       <div className="flex items-center space-x-2 mb-2">
         <span className="text-lg">💬</span>
