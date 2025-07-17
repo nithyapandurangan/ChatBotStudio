@@ -1,6 +1,6 @@
 import { memo } from "react"
 import { Handle, Position } from "reactflow"
-import { Card, CardContent } from "../ui/card"
+import { Card, CardContent } from "../ui/Card"
 import { Badge } from "../ui/badge"
 import { MessageCircle, Settings, FileText } from "lucide-react"
 

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react"
 import { Button } from "./ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/Card"
 import { ScrollArea } from "../components/ui/scroll-area"
 import { Badge } from "../components/ui/badge"
 import { Separator } from "../components/ui/separator"

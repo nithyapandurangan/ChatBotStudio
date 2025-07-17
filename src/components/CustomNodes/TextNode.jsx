@@ -1,6 +1,6 @@
 import { memo } from "react"
 import { Handle, Position } from "reactflow"
-import { Card, CardContent } from "../ui/card"
+import { Card, CardContent } from "../ui/Card"
 import { MessageSquare, MessageCircle, Send, DiscIcon as Discord, TextIcon as Telegram } from "lucide-react"
 import { Badge } from "../ui/badge"
 

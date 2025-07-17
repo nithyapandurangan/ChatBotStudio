@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react"
+import { useCallback, useMemo, useEffect } from "react"
 import ReactFlow, { ReactFlowProvider, addEdge, MiniMap, Controls, Background, useReactFlow, applyNodeChanges, applyEdgeChanges, BackgroundVariant, MarkerType } 
 from "reactflow"
 import "reactflow/dist/style.css"
@@ -15,7 +15,16 @@ const nodeTypes = {
   customNode: CustomNode,
 }
 
-function FlowCanvasInner({ onNodeSelect, nodes, setNodes, edges, setEdges, onNodesChange, onEdgesChange }) {
+function FlowCanvasInner({
+  onNodeSelect,
+  nodes,
+  setNodes,
+  edges,
+  setEdges,
+  onNodesChange,
+  onEdgesChange,
+  isDesktop, 
+}) {
   const reactFlowInstance = useReactFlow()
   const { theme } = useTheme()
 
@@ -177,6 +186,17 @@ function FlowCanvasInner({ onNodeSelect, nodes, setNodes, edges, setEdges, onNod
     [theme],
   )
 
+  // Fit view when nodes are added or removed
+  useEffect(() => {
+    if (reactFlowInstance && nodes.length > 0) {
+      reactFlowInstance.fitView({
+        padding: 0.2,
+        duration: 300,
+        maxZoom: 0.9,
+      })
+    }
+  }, [nodes.length, reactFlowInstance])
+
   return (
     <div className="w-full h-full">
       <ReactFlow
@@ -189,10 +209,12 @@ function FlowCanvasInner({ onNodeSelect, nodes, setNodes, edges, setEdges, onNod
         onNodeDoubleClick={onNodeDoubleClick}
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
+        onDragOver={isDesktop ? onDragOver : undefined} 
+        onDrop={isDesktop ? onDrop : undefined}         
         fitView
+        fitViewOptions={{ maxZoom: 0.9, minZoom: 0.2 }}  
         className="bg-background"
+        panOnDrag={true}
         defaultEdgeOptions={{
           style: {
             stroke: theme === "dark" ? "#64748b" : "#475569",
@@ -218,7 +240,7 @@ function FlowCanvasInner({ onNodeSelect, nodes, setNodes, edges, setEdges, onNod
           style={{
             button: {
               backgroundColor: theme === "dark" ? "#1f2937" : "#ffffff",
-              color: theme === "dark" ? "hsl(var(--foreground))" : "hsl(var(--foreground))", 
+              color: theme === "dark" ? "hsl(var(--foreground))" : "hsl(var(--foreground))",
               border: `1px solid ${theme === "dark" ? "#374151" : "#d1d5db"}`,
             },
           }}
@@ -238,7 +260,16 @@ function FlowCanvasInner({ onNodeSelect, nodes, setNodes, edges, setEdges, onNod
 }
 
 // Provider wrapper to supply ReactFlow context to FlowCanvasInner
-export default function FlowCanvas({ onNodeSelect, nodes, setNodes, edges, setEdges, onNodesChange, onEdgesChange }) {
+export default function FlowCanvas({
+  onNodeSelect,
+  nodes,
+  setNodes,
+  edges,
+  setEdges,
+  onNodesChange,
+  onEdgesChange,
+  isDesktop, 
+}) {
   return (
     <ReactFlowProvider>
       <FlowCanvasInner
@@ -249,6 +280,7 @@ export default function FlowCanvas({ onNodeSelect, nodes, setNodes, edges, setEd
         setEdges={setEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        isDesktop={isDesktop} 
       />
     </ReactFlowProvider>
   )

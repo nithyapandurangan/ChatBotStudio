@@ -1,6 +1,6 @@
 import { memo } from "react"
 import { Handle, Position } from "reactflow"
-import { Card, CardContent } from "../ui/card"
+import { Card, CardContent } from "../ui/Card"
 import { GitBranch } from "lucide-react"
 
 function ConditionNode({ data, selected }) {

@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Separator } from "../components/ui/separator"
 import { Settings, Boxes, Github, Linkedin } from "lucide-react"
 
-export default function Sidebar({ selectedNode, updateNodeData, onDeselect }) {
+export default function Sidebar({ selectedNode, updateNodeData, onDeselect, onNodeSelect, onNodeTap }) {
   // Initialize active tab depending on whether a node is selected or not
   const [activeTab, setActiveTab] = useState(selectedNode ? "settings" : "nodes")
 
@@ -25,8 +25,8 @@ export default function Sidebar({ selectedNode, updateNodeData, onDeselect }) {
       <div className="p-4">
         <h1 className="text-lg font-semibold text-foreground">ChatBotStudio</h1>
         <p className="text-sm text-muted-foreground">Build your chatbot flow</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Drag and drop nodes to design conversational flows, simulate interactions, and export your creations.
+        <p className="text-xs text-muted-foreground mt-2">
+          Drag and drop nodes to design conversational flows, simulate interactions, and export your creations as JSON/PNG.
         </p>
 
         <div className="mt-3 pt-3 border-t border-border">
@@ -42,7 +42,7 @@ export default function Sidebar({ selectedNode, updateNodeData, onDeselect }) {
               <Linkedin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </a>
             <a
-              href="https://github.com/nithya-pandurangan"
+              href="https://github.com/nithyapandurangan"
               target="_blank"
               rel="noopener noreferrer"
               className="p-1.5 rounded-md hover:bg-accent transition-colors"
@@ -76,7 +76,7 @@ export default function Sidebar({ selectedNode, updateNodeData, onDeselect }) {
         <div className="flex-1 overflow-hidden">
           {/* Panel showing all available nodes */}
           <TabsContent value="nodes" className="h-full mt-0 p-4">
-            <NodesPanel />
+            <NodesPanel onNodeTap={onNodeTap} onNodeSelect={onNodeSelect} />
           </TabsContent>
 
           {/* Panel for editing selected node's settings */}

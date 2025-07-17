@@ -1,14 +1,21 @@
 # ChatBotStudio
 
-ChatBotStudio is a modern, interactive chatbot flow builder built with React, Tailwind CSS, and React Flow.  It empowers users to design conversational flows visually with powerful features such as:
+ChatBotStudio is a modern, interactive chatbot flow builder designed to empower users to visually design and simulate conversational flows. Built with a focus on intuitive UI and robust functionality, it's ideal for prototyping and visualizing complex chatbot interactions.
 
-- 🧱 Drag-and-Drop Node System
-- 💬 Customizable & Editable Message Types (Text, Markdown, System)
-- 🧠 Conditional Logic Support
-- 🔁 Flow simulation mode with loop handling
-- 🎨 Node categories for organization
-- 💾 Auto-save to Local Storage
-- 📤 Export to JSON/image
+## Features
+
+- **🧱 Drag-and-Drop Node System:** Easily add and arrange conversational nodes on the canvas.
+- **💬 Customizable & Editable Message Types:** Create diverse messages including:
+  - **Text Messages:** For SMS, WhatsApp, Telegram, Messenger, Discord.
+  - **Custom Messages:** Markdown-rich content and system-level messages.
+- **🧠 Conditional Logic Support:** Implement branching logic based on user-defined expressions.
+- **🔁 Flow Simulation Mode:** Run the chatbot logic visually with automatic progression through nodes
+- **🎨 Node Categories:** Organized sidebar with categories for quick access.
+- **💾 Auto-save to Local Storage:** Changes are automatically persisted.
+- **📤 Flexible Export Options:**
+  - Export as **JSON** to save or share your flows
+  - Export as **PNG** for presentations and documentation
+- **🌙 Dark Mode & Theme Switching:** Seamless light/dark toggle.
 
 Built with extensibility and testability in mind. Ideal for visual chatbot prototyping.
 
@@ -43,3 +50,26 @@ Built with extensibility and testability in mind. Ideal for visual chatbot proto
 - ✨ Improved Node Styling by adding icons, colour-coded borders, shadows and hover effects
 - 🖼️ Added Radix-ui & CVA (Class Variance Authority) for better styled UI components
 - 🚀 Responsive Design for better user experience
+
+### Phase 5 : Mobile Responsiveness Optimization
+
+- 📱 Improved mobile responsiveness for better user experience
+- 📱 Menu and Node Panel adjustments for better mobile usability
+
+## Tech Stack
+
+- **Frontend Framework**: React (with React Hooks)
+- **Styling**: Tailwind CSS, Radix UI, Class Variance Authority (CVA)
+- **Drag & Drop & Flow Visualization**: React Flow
+- **State Management**: React useState, useEffect, useCallback 
+- **Theming**: next-themes (Dark/Light Mode)
+- **UI Components**: Radix UI (Sheet, Tabs, Buttons, Separator, Toasts, etc.)
+- **Icons**: Lucide React
+- **Build Tool**: Vite
+- **Responsive Utilities**: Custom media query hook (useMediaQuery) for device detection
+
+## 🤝 Contributing
+
+Have a feature idea or bug fix? Fork the repo and submit a PR. Contributions of all kinds are welcome!
+
+Created with ❤️ by Nithya Pandurangan!

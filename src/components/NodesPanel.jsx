@@ -1,13 +1,22 @@
 import { ScrollArea } from "../components/ui/scroll-area"
 import { Separator } from "../components/ui/separator"
-import { MessageSquare, Palette, GitBranch } from "lucide-react"
+import { Palette, GitBranch, Send } from "lucide-react" 
+import { useMediaQuery } from "../hooks/use-media-query"
 
-export default function NodesPanel() {
+export default function NodesPanel({ onNodeTap }) {
+  const isDesktop = useMediaQuery("(min-width: 768px)")
+
   // Called when user starts dragging a node item,
   // sets the drag data with the node type so it can be identified on drop
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData("application/reactflow", nodeType)
     event.dataTransfer.effectAllowed = "move"
+  }
+
+  const handleNodeClick = (nodeType) => {
+    if (!isDesktop && onNodeTap) {
+      onNodeTap(nodeType)
+    }
   }
 
   // Define node categories and their node items to display in the panel
@@ -19,15 +28,15 @@ export default function NodesPanel() {
         {
           type: "textNode",
           label: "Message",
-          description: "Send a simple text message",
-          icon: <MessageSquare className="h-5 w-5" />,
+          description: "Send a simple text message (SMS, WhatsApp, etc.)",
+          icon: <Send className="h-5 w-5" />, 
           bg: "bg-blue-100 dark:bg-blue-900/40",
           border: "border-blue-200 dark:border-blue-800",
         },
         {
           type: "customNode",
           label: "Custom Message",
-          description: "Send a styled message (WhatsApp, System, Markdown)",
+          description: "Send a styled message (System, Markdown)", 
           icon: <Palette className="h-5 w-5" />,
           bg: "bg-purple-100 dark:bg-purple-900/40",
           border: "border-purple-200 dark:border-purple-800",
@@ -51,6 +60,7 @@ export default function NodesPanel() {
 
   return (
     <ScrollArea className="h-full pr-3">
+      {!isDesktop && <p className="text-sm text-muted-foreground mb-4">Tap a node to add it to the canvas.</p>}
       <div className="space-y-6 pb-4">
         {/* Render each node category */}
         {NODE_CATEGORIES.map((category) => (
@@ -66,9 +76,13 @@ export default function NodesPanel() {
               {category.nodes.map((node) => (
                 <div
                   key={node.type}
-                  onDragStart={(event) => onDragStart(event, node.type)} 
-                  draggable
-                  className={`p-3 ${node.bg} ${node.border} border rounded-lg cursor-move shadow-sm hover:shadow-md transition-all duration-200 group`}
+                  onDragStart={isDesktop ? (event) => onDragStart(event, node.type) : undefined}
+                  onClick={() => handleNodeClick(node.type)}
+                  draggable={isDesktop}
+                  className={`p-3 ${node.bg} ${node.border} border rounded-lg cursor-move shadow-sm hover:shadow-md transition-all duration-200 group  ${
+                    isDesktop ? "cursor-move" : "cursor-pointer"
+                  }`}
+                  title={isDesktop ? `Drag to add ${node.label}` : `Tap to add ${node.label}`}
                 >
                   <div className="flex items-center gap-3">
                     {/* Node icon with subtle background and hover color changes */}
