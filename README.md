@@ -3,7 +3,7 @@
 ChatBotStudio is a modern, interactive chatbot flow builder built with React, Tailwind CSS, and React Flow.  It empowers users to design conversational flows visually with powerful features such as:
 
 - 🧱 Drag-and-Drop Node System
-- 💬 Customizable & Editable Message Types (Text, WhatsApp, Markdown, System)
+- 💬 Customizable & Editable Message Types (Text, Markdown, System)
 - 🧠 Conditional Logic Support
 - 🔁 Flow simulation mode with loop handling
 - 🎨 Node categories for organization
@@ -36,3 +36,10 @@ Built with extensibility and testability in mind. Ideal for visual chatbot proto
 - 🔌 Simulation mode with conditional and custom logic handling
 - 🚦 Looping Support to allow connecting a node to previous node with a max step limit of 100
 - ⚙️ Custom Node Support to create nodes with custom logic like Whatsapp, Markdown, System Messages
+
+### Phase 4 : UI Enhancements
+
+- 🎨 Dark Mode and Theme Switching
+- ✨ Improved Node Styling by adding icons, colour-coded borders, shadows and hover effects
+- 🖼️ Added Radix-ui & CVA (Class Variance Authority) for better styled UI components
+- 🚀 Responsive Design for better user experience

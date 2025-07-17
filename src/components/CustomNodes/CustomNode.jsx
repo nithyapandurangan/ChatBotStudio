@@ -1,96 +1,81 @@
-import { Handle, Position } from 'reactflow';
+import { memo } from "react"
+import { Handle, Position } from "reactflow"
+import { Card, CardContent } from "../ui/card"
+import { Badge } from "../ui/badge"
+import { MessageCircle, Settings, FileText } from "lucide-react"
 
-const messageTypeStyles = {
-  whatsapp: {
-    bg: 'bg-green-50',
-    text: 'text-green-800',
-    icon: '📱',
-    title: 'WhatsApp Message',
-    accent: 'bg-green-500'
-  },
+const messageTypeConfig = {
   system: {
-    bg: 'bg-gray-50',
-    text: 'text-gray-600',
-    icon: '⚙️',
-    title: 'System Message',
-    accent: 'bg-gray-500'
+    icon: Settings,
+    title: "System Message",
+    bgColor: "bg-gray-100 dark:bg-gray-900/40",
+    iconColor: "text-gray-600 dark:text-gray-400",
+    badgeColor: "bg-gray-100 text-gray-800 dark:bg-gray-900/40 dark:text-gray-400",
   },
   markdown: {
-    bg: 'bg-blue-50',
-    text: 'text-blue-800',
-    icon: '📄',
-    title: 'Markdown Message',
-    accent: 'bg-blue-500'
+    icon: FileText,
+    title: "Markdown Message",
+    bgColor: "bg-blue-100 dark:bg-blue-900/40",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    badgeColor: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400",
   },
-};
-
-function renderMarkdown(text) {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // bold
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')             // italic
-    .replace(/`(.*?)`/g, '<code class="bg-gray-200 px-1 rounded text-xs">$1</code>'); // code
 }
 
-export default function CustomNode({ data, selected }) {
-  const type = data.messageType || 'system';
-  const label = data.label || 'Enter your custom message...';
-  const style = messageTypeStyles[type] || messageTypeStyles.system;
+// Enhanced markdown renderer
+function renderMarkdown(text) {
+  if (!text) return ""
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+    .replace(/`(.*?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-xs font-mono">$1</code>')
+    .replace(/\n/g, "<br>")
+}
+
+function CustomNode({ data, selected }) {
+  const messageType = data.messageType || "system"
+  const config = messageTypeConfig[messageType] || messageTypeConfig.system
+  const IconComponent = config.icon
 
   return (
-    <div className={`
-      bg-white rounded-lg shadow-md px-4 py-3 min-w-[200px] max-w-[300px] transition-all
-      ${selected 
-        ? 'ring-2 ring-purple-500 shadow-lg scale-105' 
-        : 'border border-gray-300 hover:border-purple-200'
-      }
-    `}>
-      {/* Node Header */}
-      <div className="flex items-center space-x-2 mb-2">
-        <span className="text-lg">{style.icon}</span>
-        <div className="font-semibold text-sm text-gray-700">{style.title}</div>
-      </div>
-      
-      {/* Message Type Indicator */}
-      <div className="flex items-center space-x-2 mb-2">
-        <div className={`w-2 h-2 rounded-full ${style.accent}`}></div>
-        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          {type}
-        </span>
-      </div>
-      
-      {/* Node Content - Fixed uniform styling */}
-      <div className={`text-sm p-3 rounded border ${style.bg} ${style.text} min-h-[60px]`}>
-        {type === 'markdown' ? (
-          <div
-            className="prose prose-sm max-w-none text-sm"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(label) }}
-          />
-        ) : type === 'system' ? (
-          <div className="italic text-sm">
-            {label}
+    <Card
+      className={`min-w-[200px] max-w-[300px] transition-all duration-200 cursor-pointer ${
+        selected ? "ring-2 ring-primary ring-offset-2 shadow-lg" : "hover:shadow-md"
+      }`}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <div className={`flex-shrink-0 p-2 rounded-md ${config.bgColor}`}>
+            <IconComponent className={`h-4 w-4 ${config.iconColor}`} />
           </div>
-        ) : (
-          <div className="whitespace-pre-wrap text-sm">
-            {label}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="text-sm font-medium text-foreground truncate">{config.title}</div>
+              <Badge variant="secondary" className={`text-xs px-1 py-0 ${config.badgeColor}`}>
+                {messageType.toUpperCase()}
+              </Badge>
+            </div>
+            <div
+              className="text-sm text-muted-foreground p-2 bg-muted rounded border-dashed border hover:bg-accent transition-colors h-16 overflow-hidden"
+              title="Double-click to edit message"
+            >
+              {messageType === "markdown" ? (
+                <div
+                  className="prose prose-xs max-w-none dark:prose-invert line-clamp-3"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(data.label || "Click to add your message...") }}
+                />
+              ) : messageType === "system" ? (
+                <div className="italic line-clamp-3">{data.label || "Click to add your message..."}</div>
+              ) : (
+                <div className="whitespace-pre-wrap line-clamp-3">{data.label || "Click to add your message..."}</div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
-      
-      {/* Target Handle (Input) */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="w-3 h-3 bg-purple-500 border-2 border-white shadow-md"
-        style={{ left: -6 }}
-      />
-      
-      {/* Source Handle (Output) */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="w-3 h-3 bg-pink-500 border-2 border-white shadow-md"
-        style={{ right: -6 }}
-      />
-    </div>
-  );
+        </div>
+      </CardContent>
+      <Handle type="target" position={Position.Top} className="w-3 h-3 bg-primary border-2 border-background" />
+      <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-primary border-2 border-background" />
+    </Card>
+  )
 }
+
+export default memo(CustomNode)

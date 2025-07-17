@@ -1,112 +1,175 @@
-export default function ExportButton({ nodes, edges }) {
-  const handleExportJSON = () => {
-    const flow = { nodes, edges };
-    const blob = new Blob([JSON.stringify(flow, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+import { useState } from "react"
+import { Button } from "./ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu"
+import { useToast } from "../hooks/use-toast"
+import { Download, FileJson, ImageIcon, ChevronDown } from "lucide-react"
+import { useTheme } from "next-themes"
 
-    const link = document.createElement('a');
-    link.download = 'flow.json';
-    link.href = url;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
+export default function ExportButton({ nodes, edges, children }) {
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportType, setExportType] = useState(null)
+  const { toast } = useToast()
+  const { theme } = useTheme()
 
-  const handleExportImage = async () => {
+  // Export flow data as formatted JSON file
+  const handleExportJSON = async () => {
+    setIsExporting(true)
+    setExportType("json")
+
     try {
-      const button = document.activeElement;
-      const originalText = button.textContent;
-      button.textContent = 'Exporting...';
-      button.disabled = true;
-
-      // Create a temporary container
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.top = '-9999px';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.width = '1200px';
-      tempContainer.style.height = '800px';
-      tempContainer.style.backgroundColor = '#f9fafb';
-      document.body.appendChild(tempContainer);
-
-      // Clone the flow content
-      const flowCanvas = document.querySelector('.react-flow');
-      const clonedFlow = flowCanvas.cloneNode(true);
-      
-      // Preserve all computed styles
-      const allElements = flowCanvas.querySelectorAll('*');
-      const clonedElements = clonedFlow.querySelectorAll('*');
-      
-      allElements.forEach((el, index) => {
-        if (clonedElements[index]) {
-          const computedStyle = window.getComputedStyle(el);
-          const styleText = Array.from(computedStyle).reduce((str, property) => {
-            return str + property + ':' + computedStyle.getPropertyValue(property) + ';';
-          }, '');
-          clonedElements[index].style.cssText = styleText;
-        }
-      });
-
-      tempContainer.appendChild(clonedFlow);
-
-      // Wait a moment for styles to be applied
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Use html2canvas on the temporary container
-      const { default: html2canvas } = await import('html2canvas');
-      
-      const canvas = await html2canvas(tempContainer, {
-        backgroundColor: '#f9fafb',
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        width: 1200,
-        height: 800,
-      });
-
-      // Clean up
-      document.body.removeChild(tempContainer);
-      
-      // Download
-      canvas.toBlob((blob) => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = 'chatbot-flow.png';
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
-      }, 'image/png', 1.0);
-
-      // Reset button state
-      button.textContent = originalText;
-      button.disabled = false;
-
-    } catch (error) {
-      console.error('Error exporting image:', error);
-      alert('Failed to export image. Please try again.');
-      
-      // Reset button state on error
-      const button = document.activeElement;
-      if (button) {
-        button.textContent = 'Export PNG';
-        button.disabled = false;
+      // Prepare flow data with metadata
+      const flow = {
+        nodes,
+        edges,
+        metadata: {
+          version: "1.0",
+          exportedAt: new Date().toISOString(),
+          nodeCount: nodes.length,
+          edgeCount: edges.length,
+        },
       }
-    }
-  };
 
+      // Create a downloadable JSON blob and trigger download
+      const blob = new Blob([JSON.stringify(flow, null, 2)], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-")
+      link.download = `chatbot-flow-${timestamp}.json`
+      link.href = url
+      link.click()
+      URL.revokeObjectURL(url)
+
+      toast({
+        title: "Export Successful",
+        description: "Flow exported as JSON file.",
+      })
+    } catch (error) {
+      console.error("JSON export error:", error)
+      toast({
+        title: "Export Failed",
+        description: "Failed to export JSON. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsExporting(false)
+      setExportType(null)
+    }
+  }
+
+  // Export flow visualization as PNG image
+  const handleExportImage = async () => {
+    setIsExporting(true)
+    setExportType("png")
+
+    try {
+      // Dynamic import to reduce bundle size
+      const { toPng } = await import("html-to-image")
+
+      const flowElement = document.querySelector(".react-flow")
+      if (!flowElement) {
+        throw new Error("Flow canvas not found")
+      }
+
+      // Get the bounding box of all nodes to crop the image properly
+      const nodeElements = flowElement.querySelectorAll(".react-flow__node")
+      let minX = Number.POSITIVE_INFINITY,
+        minY = Number.POSITIVE_INFINITY,
+        maxX = Number.NEGATIVE_INFINITY,
+        maxY = Number.NEGATIVE_INFINITY
+
+      nodeElements.forEach((node) => {
+        const rect = node.getBoundingClientRect()
+        const flowRect = flowElement.getBoundingClientRect()
+        const relativeX = rect.left - flowRect.left
+        const relativeY = rect.top - flowRect.top
+
+        minX = Math.min(minX, relativeX)
+        minY = Math.min(minY, relativeY)
+        maxX = Math.max(maxX, relativeX + rect.width)
+        maxY = Math.max(maxY, relativeY + rect.height)
+      })
+
+      // Add padding around the bounding box
+      const padding = 50
+      const width = Math.max(800, maxX - minX + padding * 2)
+      const height = Math.max(600, maxY - minY + padding * 2)
+
+      // Generate PNG image data with adjusted background and cropping
+      const dataUrl = await toPng(flowElement, {
+        backgroundColor: theme === "dark" ? "#0f172a" : "#ffffff",
+        width,
+        height,
+        style: {
+          transform: `translate(${padding - minX}px, ${padding - minY}px)`,
+        },
+        pixelRatio: 2,
+      })
+
+      // Create download link
+      const link = document.createElement("a")
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-")
+      link.download = `chatbot-flow-${timestamp}.png`
+      link.href = dataUrl
+      link.click()
+
+      toast({
+        title: "Export Successful",
+        description: "Flow exported as PNG image.",
+      })
+    } catch (error) {
+      console.error("PNG export error:", error)
+      toast({
+        title: "Export Failed",
+        description: "Failed to export image. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsExporting(false)
+      setExportType(null)
+    }
+  }
+
+  // If custom trigger element (children) is passed, render dropdown around it
+  if (children) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div className="cursor-pointer">{children}</div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={handleExportJSON} disabled={isExporting}>
+            <FileJson className="h-4 w-4 mr-2" />
+            {isExporting && exportType === "json" ? "Exporting..." : "Export as JSON"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleExportImage} disabled={isExporting}>
+            <ImageIcon className="h-4 w-4 mr-2" />
+            {isExporting && exportType === "png" ? "Exporting..." : "Export as PNG"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+
+  // Default export button with dropdown options for JSON and PNG export
   return (
-    <div className="space-x-2">
-      <button
-        onClick={handleExportJSON}
-        className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-      >
-        Export JSON
-      </button>
-      <button
-        onClick={handleExportImage}
-        className="px-4 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition disabled:opacity-50"
-      >
-        Export PNG
-      </button>
-    </div>
-  );
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="sm" variant="outline" disabled={isExporting}>
+          <Download className="h-4 w-4 mr-2" />
+          {isExporting ? "Exporting..." : "Export"}
+          <ChevronDown className="h-4 w-4 ml-1" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handleExportJSON} disabled={isExporting}>
+          <FileJson className="h-4 w-4 mr-2" />
+          {isExporting && exportType === "json" ? "Exporting..." : "Export as JSON"}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleExportImage} disabled={isExporting}>
+          <ImageIcon className="h-4 w-4 mr-2" />
+          {isExporting && exportType === "png" ? "Exporting..." : "Export as PNG"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 }

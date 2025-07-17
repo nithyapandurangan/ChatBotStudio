@@ -1,47 +1,61 @@
-import { Handle, Position } from 'reactflow';
+import { memo } from "react"
+import { Handle, Position } from "reactflow"
+import { Card, CardContent } from "../ui/card"
+import { GitBranch } from "lucide-react"
 
-export default function ConditionNode({ data, selected }) {
+function ConditionNode({ data, selected }) {
   return (
-    <div className={`
-      bg-white rounded-lg shadow-md px-4 py-3 min-w-[240px] transition-all
-      ${selected 
-        ? 'ring-2 ring-yellow-500 shadow-lg scale-105' 
-        : 'border border-gray-300 hover:border-yellow-300'
-      }
-    `}>
-      {/* Header */}
-      <div className="flex items-center space-x-2 mb-2">
-        <span className="text-lg">🧠</span>
-        <div className="font-semibold text-sm text-gray-700">Condition</div>
-      </div>
+    <div className="relative">
+      <Card
+        className={`min-w-[240px] transition-all duration-200 cursor-pointer ${
+          selected ? "ring-2 ring-primary ring-offset-2 shadow-lg" : "hover:shadow-md"
+        }`}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-md">
+              <GitBranch className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-foreground mb-1">Condition</div>
+              <div
+                className="text-xs text-muted-foreground bg-muted p-2 rounded font-mono border-dashed border hover:bg-accent transition-colors"
+                title="Double-click to edit condition"
+              >
+                {data.condition || "Click to define condition..."}
+              </div>
+            </div>
+          </div>
+        </CardContent>
 
-      {/* Content */}
-      <div className="text-gray-800 text-sm bg-gray-50 p-2 rounded border">
-        {data.condition || 'Define condition...'}
-      </div>
+        <Handle type="target" position={Position.Top} className="w-3 h-3 bg-primary border-2 border-background" />
 
-      {/* Handles */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="w-3 h-3 bg-yellow-500 border-2 border-white shadow-md"
-        style={{ left: -6 }}
-      />
-      {/* Two outputs: True and False */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="true"
-        className="w-3 h-3 bg-green-500 border-2 border-white shadow-md"
-        style={{ top: '30%', right: -6 }}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        id="false"
-        className="w-3 h-3 bg-red-500 border-2 border-white shadow-md"
-        style={{ top: '70%', right: -6 }}
-      />
+        {/* True handle */}
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id="true"
+          className="w-3 h-3 bg-green-500 border-2 border-background"
+          style={{ left: "30%" }}
+        />
+
+        {/* False handle */}
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id="false"
+          className="w-3 h-3 bg-red-500 border-2 border-background"
+          style={{ left: "70%" }}
+        />
+      </Card>
+
+      {/* Labels for the handles */}
+      <div className="absolute -bottom-6 left-0 right-0 flex justify-between px-4">
+        <span className="text-xs text-green-600 dark:text-green-400 font-medium">True</span>
+        <span className="text-xs text-red-600 dark:text-red-400 font-medium">False</span>
+      </div>
     </div>
-  );
+  )
 }
+
+export default memo(ConditionNode)
