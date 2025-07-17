@@ -1,12 +1,13 @@
 # ChatBotStudio
 
-ChatBotStudio is a modern, interactive chatbot flow builder built with React, Tailwind CSS, and React Flow. It allows users to visually design chatbot message flows with features like:
+ChatBotStudio is a modern, interactive chatbot flow builder built with React, Tailwind CSS, and React Flow.  It empowers users to design conversational flows visually with powerful features such as:
 
-- 🧱 Drag-and-drop nodes
-- 💬 Editable text nodes
-- 🔁 Flow simulation mode
-- 🎨 Node categories
-- 💾 Auto-save
+- 🧱 Drag-and-Drop Node System
+- 💬 Customizable & Editable Message Types (Text, WhatsApp, Markdown, System)
+- 🧠 Conditional Logic Support
+- 🔁 Flow simulation mode with loop handling
+- 🎨 Node categories for organization
+- 💾 Auto-save to Local Storage
 - 📤 Export to JSON/image
 
 Built with extensibility and testability in mind. Ideal for visual chatbot prototyping.
@@ -16,13 +17,22 @@ Built with extensibility and testability in mind. Ideal for visual chatbot proto
 ### Phase 1: Core Functionality Implementation
 
 - 💬 Message Node (TextNode) implementation
-- 🔗 Drag & Drop support in Node Panel
-- 🔌 Connection handles for nodes (Source/Target)
+- 🔗 Drag & Drop support in Node Panel using React Flow
+- 🔌 Connection handles for Nodes (Source/Target)
 - ⚙️ React Flow integration
 
 ### Phase 2: Node Editing and Flow Validation
 
 - 📝 Text Node editing functionality
-- ✏️ Settings Panel implementation for editing messages
+- ✏️ Settings Panel implementation for editing node-specific data
 - 🔍 Flow validation for disconnected nodes, start/end node checks and more
 - 💾 Save functionality for error handling
+
+### Phase 3: Auto-Save, Custom Node and Export Functionality
+
+- 💾 Auto-save support using `localStorage`
+- 📤 Export flow as JSON for re-importing/sharing
+- 📤 Export flow as PNG image including nodes, edges, and layout (using html2canvas)
+- 🔌 Simulation mode with conditional and custom logic handling
+- 🚦 Looping Support to allow connecting a node to previous node with a max step limit of 100
+- ⚙️ Custom Node Support to create nodes with custom logic like Whatsapp, Markdown, System Messages

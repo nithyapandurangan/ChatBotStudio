@@ -12,9 +12,13 @@ import ReactFlow, {
 
 import 'reactflow/dist/style.css';
 import TextNode from './CustomNodes/TextNode';
+import ConditionNode from './CustomNodes/ConditionNode';
+import CustomNode from './CustomNodes/CustomNode';
 
 const nodeTypes = {
-  textNode: TextNode
+  textNode: TextNode,
+  conditionNode: ConditionNode,
+  customNode: CustomNode,
 };
 
 function FlowCanvasInner({ onNodeSelect, nodes, setNodes, edges, setEdges }) {
@@ -35,8 +39,38 @@ function FlowCanvasInner({ onNodeSelect, nodes, setNodes, edges, setEdges }) {
   );
 
   const onConnect = useCallback((params) => {
-    setEdges((eds) => addEdge(params, eds));
-  }, [setEdges]);
+    const sourceNode = nodes.find(n => n.id === params.source);
+
+    let edgeLabel = '';
+    if (sourceNode?.type === 'conditionNode') {
+      // Count how many edges already exist from this conditionNode
+      const existingEdges = edges.filter(e => e.source === sourceNode.id);
+      
+      // First edge should be 'true', second should be 'false'
+      edgeLabel = existingEdges.length === 0 ? 'true' : 'false';
+      
+      console.log(`Creating edge from condition node: ${edgeLabel}`);
+      console.log(`Existing edges from this node: ${existingEdges.length}`);
+    }
+
+    const newEdge = {
+      ...params,
+      data: { label: edgeLabel }, 
+      sourceHandle: edgeLabel,
+    };
+
+    console.log('New edge created:', newEdge);
+
+    setEdges((eds) => addEdge(newEdge, eds));
+  }, [nodes, edges, setEdges]);
+
+  // Debug: log all edges
+  console.log('All edges:', edges.map(e => ({
+    source: e.source,
+    target: e.target,
+    label: e.data?.label,
+    sourceHandle: e.sourceHandle,
+  })));
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -57,11 +91,33 @@ function FlowCanvasInner({ onNodeSelect, nodes, setNodes, edges, setEdges }) {
       y: event.clientY,
     });
 
+    // Create node data based on type
+    let nodeData;
+    switch (type) {
+      case 'textNode':
+        nodeData = { label: 'New Message' };
+        break;
+      case 'conditionNode':
+        nodeData = { 
+          label: 'New Condition',
+          condition: 'true' 
+        };
+        break;
+      case 'customNode':
+        nodeData = { 
+          label: 'Enter your custom message...',
+          messageType: 'system' 
+        };
+        break;
+      default:
+        nodeData = { label: 'New Message' };
+    }
+
     const newNode = {
       id: `${type}-${Date.now()}`,
       type,
       position,
-      data: { label: 'New Message' },
+      data: nodeData,
     };
 
     setNodes((nds) => nds.concat(newNode));
