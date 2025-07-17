@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { Button } from "./ui/button"
 import { Textarea } from "../components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
-import { Card, CardContent } from "./ui/Card"
+import { Card, CardContent } from "./ui/card"
 import { ScrollArea } from "../components/ui/scroll-area"
 import { X, Save, Edit2 } from "lucide-react"
 
