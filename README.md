@@ -56,6 +56,13 @@ Built with extensibility and testability in mind. Ideal for visual chatbot proto
 - 📱 Improved mobile responsiveness for better user experience
 - 📱 Menu and Node Panel adjustments for better mobile usability
 
+### Phase 6 : Delete Node, Default Nodes and Simulation Logic Improvement
+
+- 🗑️ Node Deletion with Confirmation dialog to prevent accidental deletions
+- 🧱 Default Nodes on Load ensuring users aren't met with an empty screen and guiding them to begin building flows
+- 🧠 Improved Simulation Logic to correctly interpret conditions in nodes with custom user testing input.
+- ✅ Validation Feedback to ensure each node has a proper label and connected paths
+
 ## Tech Stack
 
 - **Frontend Framework**: React (with React Hooks)

@@ -8,13 +8,6 @@ import TextNode from "./CustomNodes/TextNode"
 import ConditionNode from "./CustomNodes/ConditionNode"
 import CustomNode from "./CustomNodes/CustomNode"
 
-// Map node types to their custom components
-const nodeTypes = {
-  textNode: TextNode,
-  conditionNode: ConditionNode,
-  customNode: CustomNode,
-}
-
 function FlowCanvasInner({
   onNodeSelect,
   nodes,
@@ -24,7 +17,14 @@ function FlowCanvasInner({
   onNodesChange,
   onEdgesChange,
   isDesktop, 
+  deleteNode,
 }) {
+
+   const nodeTypes = useMemo(() => ({
+    textNode: (props) => <TextNode {...props} deleteNode={deleteNode} />,
+    conditionNode: (props) => <ConditionNode {...props} deleteNode={deleteNode} />,
+    customNode: (props) => <CustomNode {...props} deleteNode={deleteNode} />,
+  }), [deleteNode])
   const reactFlowInstance = useReactFlow()
   const { theme } = useTheme()
 
@@ -197,8 +197,28 @@ function FlowCanvasInner({
     }
   }, [nodes.length, reactFlowInstance])
 
+  // Mobile-specific CSS to prevent default touch behaviors
+  useEffect(() => {
+    if (!isDesktop) {
+      // Prevent default touch behaviors on mobile
+      const preventDefault = (e) => {
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault()
+        }
+      }
+
+      document.addEventListener('touchstart', preventDefault, { passive: false })
+      document.addEventListener('touchmove', preventDefault, { passive: false })
+
+      return () => {
+        document.removeEventListener('touchstart', preventDefault)
+        document.removeEventListener('touchmove', preventDefault)
+      }
+    }
+  }, [isDesktop])
+
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full" style={{ touchAction: 'none' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -215,6 +235,14 @@ function FlowCanvasInner({
         fitViewOptions={{ maxZoom: 0.9, minZoom: 0.2 }}  
         className="bg-background"
         panOnDrag={true}
+        // Mobile-specific props
+        panOnScroll={false}
+        panOnScrollSpeed={0.5}
+        zoomOnScroll={!isDesktop}
+        zoomOnPinch={true}
+        zoomOnDoubleClick={false}
+        preventScrolling={!isDesktop}
+        style={{ touchAction: 'none' }}
         defaultEdgeOptions={{
           style: {
             stroke: theme === "dark" ? "#64748b" : "#475569",
@@ -269,6 +297,7 @@ export default function FlowCanvas({
   onNodesChange,
   onEdgesChange,
   isDesktop, 
+  deleteNode,
 }) {
   return (
     <ReactFlowProvider>
@@ -281,6 +310,7 @@ export default function FlowCanvas({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         isDesktop={isDesktop} 
+        deleteNode={deleteNode}
       />
     </ReactFlowProvider>
   )

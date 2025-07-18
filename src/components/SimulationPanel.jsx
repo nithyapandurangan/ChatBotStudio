@@ -5,7 +5,7 @@ import { ScrollArea } from "../components/ui/scroll-area"
 import { Badge } from "../components/ui/badge"
 import { Separator } from "../components/ui/separator"
 import { useToast } from "../hooks/use-toast"
-import { Play, Square, RotateCcw, X, MessageSquare, GitBranch, Settings, AlertTriangle } from "lucide-react"
+import { Play, Square, X, MessageSquare, GitBranch, Settings, AlertTriangle } from "lucide-react"
 
 const MAX_SIMULATION_STEPS = 100 // limit to prevent infinite loops in the flow
 
@@ -25,6 +25,15 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [stepCount, setStepCount] = useState(0)
   const [simulationSpeed, setSimulationSpeed] = useState(1500)
+  const [simulationInput, setSimulationInput] = useState("") // Store user input for conditions
+  const [conversationHistory, setConversationHistory] = useState([]) // Store conversation for context
+  const [showTestInput, setShowTestInput] = useState(false)
+  
+  // Add these new states to track when waiting for input
+  const [waitingForInput, setWaitingForInput] = useState(false)
+  const [inputPrompt, setInputPrompt] = useState("")
+  const [inputProvided, setInputProvided] = useState(false) // Track if input has been provided for this condition
+
   const { toast } = useToast()
 
   // Finds the start node: a node with no incoming edges (no edge's target is this node)
@@ -35,15 +44,30 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
 
   // Given a node, determine the next node in the flow based on edges and conditions
   const getNextNode = useCallback(
-    (node) => {
+    (node, userInput = "") => {
       if (!node) return null
 
       if (node.type === "conditionNode") {
-        // Evaluate the condition safely (try/catch)
+        // Evaluate the condition safely with proper context
         let result = false
         try {
           const condition = node.data.condition || "true"
-          result = new Function("return " + condition)()
+          
+          // Create a context for condition evaluation
+          const context = {
+            input: userInput || simulationInput,
+            conversationHistory,
+            messages: conversationHistory,
+            // Add more context variables as needed
+          }
+          
+          // Create a function with the context variables available
+          const conditionFunction = new Function(
+            'input', 'conversationHistory', 'messages',
+            `return ${condition}`
+          )
+          
+          result = conditionFunction(context.input, context.conversationHistory, context.messages)
         } catch (error) {
           // Show error toast if condition code throws
           const errorMsg = `Invalid condition in node: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -55,11 +79,12 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
           return null
         }
 
-        const resultStr = result.toString().toLowerCase()
-        // Find edge whose label or sourceHandle matches the condition result ("true" or "false")
+        const resultStr = result ? "true" : "false"
+        
+        // Find edge whose label or sourceHandle matches the condition result
         const sourceEdges = edges.filter((e) => e.source === node.id)
         const targetEdge = sourceEdges.find((e) => {
-          const labelMatch = e.data?.label?.toLowerCase() === resultStr
+          const labelMatch = e.label?.toLowerCase() === resultStr
           const handleMatch = e.sourceHandle?.toLowerCase() === resultStr
           return labelMatch || handleMatch
         })
@@ -74,6 +99,17 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
           return null
         }
 
+        // Add condition result to messages for debugging
+        const conditionMessage = {
+          id: `condition-result-${Date.now()}`,
+          type: "condition",
+          content: `Condition result: ${result} (${resultStr})`,
+          nodeId: node.id,
+          nodeType: "conditionResult",
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, conditionMessage])
+
         // Return node that edge points to
         return nodes.find((n) => n.id === targetEdge.target) || null
       } else {
@@ -83,7 +119,7 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
         return nodes.find((n) => n.id === targetEdge.target) || null
       }
     },
-    [nodes, edges, toast],
+    [nodes, edges, toast, simulationInput, conversationHistory],
   )
 
   // Add a message object to the conversation log based on node type
@@ -125,6 +161,14 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
     }
 
     setMessages((prev) => [...prev, message])
+    
+    // Add to conversation history for context
+    setConversationHistory((prev) => [...prev, {
+      content: message.content,
+      type: message.type,
+      nodeType: message.nodeType,
+      timestamp: message.timestamp
+    }])
   }, [])
 
   // Initialize and start the simulation from the start node
@@ -141,9 +185,13 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
 
     // Reset messages and state for new simulation run
     setMessages([])
+    setConversationHistory([])
     setCurrentNode(start)
     setIsPlaying(true)
     setStepCount(0)
+    setWaitingForInput(false)
+    setInputPrompt("")
+    setInputProvided(false)
   }, [findStartNode, toast])
 
   // Pause the simulation
@@ -151,12 +199,21 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
     setIsPlaying(false)
   }, [])
 
-  // Reset simulation state fully
-  const resetSimulation = useCallback(() => {
-    setMessages([])
-    setStepCount(0)
-    setIsPlaying(false)
-    setCurrentNode(null)
+  // Add a function to resume simulation with input (including empty input)
+  const resumeWithInput = useCallback(() => {
+    setWaitingForInput(false)
+    setInputPrompt("")
+    setInputProvided(true) // Mark that input has been provided
+    setIsPlaying(true)
+  }, [])
+
+  // Add a function to resume with explicitly no input
+  const resumeWithNoInput = useCallback(() => {
+    setSimulationInput("")
+    setWaitingForInput(false)
+    setInputPrompt("")
+    setInputProvided(true) // Mark that input has been provided
+    setIsPlaying(true)
   }, [])
 
   // Auto-start simulation on component mount
@@ -166,7 +223,7 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
 
   // Main simulation loop, runs on changes to current node, playing state, step count, etc.
   useEffect(() => {
-    if (!isPlaying || !currentNode) return
+    if (!isPlaying || !currentNode || waitingForInput) return
 
     // Safety: stop simulation if steps exceed limit to avoid infinite loops
     if (stepCount >= MAX_SIMULATION_STEPS) {
@@ -187,11 +244,36 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
     const timeout = setTimeout(() => {
       addMessage(currentNode)
 
-      // Determine next node and advance
-      const next = getNextNode(currentNode)
+      // Handle condition nodes specially
+      if (currentNode.type === "conditionNode") {
+        // Only pause if we haven't provided input for this condition yet
+        if (!inputProvided) {
+          setWaitingForInput(true)
+          setInputPrompt(`Please provide input to test the condition: "${currentNode.data.condition}"`)
+          setIsPlaying(false)
+          
+          const waitingMessage = {
+            id: `waiting-${Date.now()}`,
+            type: "system",
+            content: `⏸️ Simulation paused. This condition needs input to evaluate: "${currentNode.data.condition}"`,
+            nodeId: currentNode.id,
+            nodeType: "system",
+            timestamp: new Date(),
+          }
+          setMessages((prev) => [...prev, waitingMessage])
+          return
+        }
+      }
+
+      // Use actual input (not fake)
+      const testInput = simulationInput
+      const next = getNextNode(currentNode, testInput)
+      
       if (next) {
         setCurrentNode(next)
         setStepCount((prev) => prev + 1)
+        // Reset inputProvided when moving to next node
+        setInputProvided(false)
       } else {
         // No next node = end of flow
         setIsPlaying(false)
@@ -204,7 +286,7 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
 
     // Cleanup timeout on dependencies change or unmount
     return () => clearTimeout(timeout)
-  }, [currentNode, isPlaying, stepCount, simulationSpeed, addMessage, getNextNode, toast])
+  }, [currentNode, isPlaying, stepCount, simulationSpeed, addMessage, getNextNode, toast, simulationInput, waitingForInput])
 
   // Determine icon for each message type for UI display
   const getMessageIcon = (message) => {
@@ -247,7 +329,9 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
           </div>
           <div className="flex items-center gap-2">
             {/* Badge indicates whether simulation is running or stopped */}
-            <Badge variant={isPlaying ? "default" : "secondary"}>{isPlaying ? "Running" : "Stopped"}</Badge>
+            <Badge variant={isPlaying ? "default" : waitingForInput ? "destructive" : "secondary"}>
+              {isPlaying ? "Running" : waitingForInput ? "Waiting for Input" : "Stopped"}
+            </Badge>
             {/* Button to exit simulation mode */}
             <Button variant="outline" size="sm" onClick={onExit}>
               <X className="h-4 w-4 mr-2" />
@@ -314,44 +398,102 @@ export default function SimulationPanel({ nodes, edges, onExit }) {
         </Card>
       </div>
 
-      {/* Control panel with start/stop, reset, and speed selection */}
+      {/* Control panel with start/stop, speed selection, and test input */}
       <div className="border-t border-border p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3">
+          
+          {/* Show input prompt when waiting for input */}
+          {waitingForInput && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-3 dark:bg-yellow-900/20 dark:border-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">{inputPrompt}</p>
+              <div className="flex items-center gap-2 mb-3">
+                <input
+                  type="text"
+                  value={simulationInput}
+                  onChange={(e) => setSimulationInput(e.target.value)}
+                  placeholder="Enter test input (or leave empty for no input)"
+                  className="flex-1 text-sm border border-input bg-background px-3 py-2 rounded"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button onClick={resumeWithInput} size="sm" variant="default">
+                  Resume with Input
+                </Button>
+                <Button onClick={resumeWithNoInput} size="sm" variant="outline">
+                  Resume with No Input
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Toggle for advanced testing */}
           <div className="flex items-center gap-2">
-            {/* Start or Stop button toggles simulation state */}
-            <Button onClick={isPlaying ? stopSimulation : startSimulation} size="sm">
-              {isPlaying ? (
-                <>
-                  <Square className="h-4 w-4 mr-2" />
-                  Stop
-                </>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 mr-2" />
-                  Start
-                </>
-              )}
-            </Button>
-            {/* Reset button resets simulation */}
-            <Button onClick={resetSimulation} variant="outline" size="sm">
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reset
-            </Button>
+            <input
+              type="checkbox"
+              id="show-test-input"
+              checked={showTestInput}
+              onChange={(e) => setShowTestInput(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <label htmlFor="show-test-input" className="text-sm text-muted-foreground">
+              Show test input (for condition testing)
+            </label>
           </div>
 
-          {/* Speed selector dropdown */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Speed:</span>
-            <select
-              value={simulationSpeed}
-              onChange={(e) => setSimulationSpeed(Number(e.target.value))}
-              className="text-sm border border-input bg-background px-2 py-1 rounded"
-            >
-              <option value={500}>Fast (0.5s)</option>
-              <option value={1000}>Normal (1s)</option>
-              <option value={1500}>Slow (1.5s)</option>
-              <option value={2500}>Very Slow (2.5s)</option>
-            </select>
+          {/* Conditionally show test input field */}
+          {showTestInput && (
+            <div className="flex items-center gap-2">
+              <label htmlFor="test-input" className="text-sm text-muted-foreground min-w-fit">
+                Test Input:
+              </label>
+              <input
+                id="test-input"
+                type="text"
+                value={simulationInput}
+                onChange={(e) => setSimulationInput(e.target.value)}
+                placeholder="Enter test input for conditions (e.g., 'I need help with a product')"
+                className="flex-1 text-sm border border-input bg-background px-3 py-2 rounded"
+              />
+            </div>
+          )}
+        
+          {/* Control buttons and speed selector */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {/* Start or Stop button toggles simulation state */}
+              <Button 
+                onClick={isPlaying ? stopSimulation : startSimulation} 
+                size="sm"
+                disabled={waitingForInput}
+              >
+                {isPlaying ? (
+                  <>
+                    <Square className="h-4 w-4 mr-2" />
+                    Stop
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Start
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Speed selector dropdown */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Speed:</span>
+              <select
+                value={simulationSpeed}
+                onChange={(e) => setSimulationSpeed(Number(e.target.value))}
+                className="text-sm border border-input bg-background px-2 py-1 rounded"
+              >
+                <option value={500}>Fast (0.5s)</option>
+                <option value={1000}>Normal (1s)</option>
+                <option value={1500}>Slow (1.5s)</option>
+                <option value={2500}>Very Slow (2.5s)</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>

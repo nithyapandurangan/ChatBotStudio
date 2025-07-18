@@ -2,7 +2,9 @@ import { memo } from "react"
 import { Handle, Position } from "reactflow"
 import { Card, CardContent } from "../ui/card"
 import { Badge } from "../ui/badge"
-import { MessageCircle, Settings, FileText } from "lucide-react"
+import { MessageCircle, Settings, FileText, Trash2 } from "lucide-react"
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "../ui/alert-dialog"
+import { Button } from "../ui/button"
 
 const messageTypeConfig = {
   system: {
@@ -31,7 +33,7 @@ function renderMarkdown(text) {
     .replace(/\n/g, "<br>")
 }
 
-function CustomNode({ data, selected }) {
+function CustomNode({ data, selected, id, deleteNode }) {
   const messageType = data.messageType || "system"
   const config = messageTypeConfig[messageType] || messageTypeConfig.system
   const IconComponent = config.icon
@@ -48,11 +50,47 @@ function CustomNode({ data, selected }) {
             <IconComponent className={`h-4 w-4 ${config.iconColor}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="text-sm font-medium text-foreground truncate">{config.title}</div>
-              <Badge variant="secondary" className={`text-xs px-1 py-0 ${config.badgeColor}`}>
-                {messageType.toUpperCase()}
-              </Badge>
+            <div className="flex items-center justify-between mb-2">
+              {" "}
+              {/* New flex container */}
+              <div className="flex items-center gap-2">
+                {" "}
+                {/* Group title and badge */}
+                <div className="text-sm font-medium text-foreground truncate">{config.title}</div>
+                <Badge variant="secondary" className={`text-xs px-1 py-0 ${config.badgeColor}`}>
+                  {messageType.toUpperCase()}
+                </Badge>
+              </div>
+              {/* Delete Button moved here */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive" // Removed absolute positioning
+                    onClick={(e) => e.stopPropagation()} // Prevent node selection when clicking delete
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the node and all its connections.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteNode(id)}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
             <div
               className="text-sm text-muted-foreground p-2 bg-muted rounded border-dashed border hover:bg-accent transition-colors h-16 overflow-hidden"
@@ -72,6 +110,7 @@ function CustomNode({ data, selected }) {
           </div>
         </div>
       </CardContent>
+
       <Handle type="target" position={Position.Top} className="w-3 h-3 bg-primary border-2 border-background" />
       <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-primary border-2 border-background" />
     </Card>

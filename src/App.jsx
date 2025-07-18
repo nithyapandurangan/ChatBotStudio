@@ -11,6 +11,7 @@ import { useTheme } from "next-themes"
 import { Sheet, SheetContent, SheetTrigger } from "./components/ui/sheet"
 import { useMediaQuery } from "./hooks/use-media-query"
 import MobileWarningToast from "./components/MobileWarningToast"
+import { initialNodes, initialEdges } from "../src/constants/defaultFlow"
 
 export default function App() {
   const [selectedNode, setSelectedNode] = useState(null)
@@ -18,17 +19,37 @@ export default function App() {
   const [nodes, setNodes] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("chatbot-flow-nodes")
-      return saved ? JSON.parse(saved) : []
+      if (saved) {
+        try {
+          const parsedNodes = JSON.parse(saved)
+          // Check if parsed nodes is not empty array
+          return parsedNodes.length > 0 ? parsedNodes : initialNodes
+        } catch (error) {
+          console.error("Error parsing saved nodes:", error)
+          return initialNodes
+        }
+      }
+      return initialNodes
     }
-    return []
+    return initialNodes
   })
 
   const [edges, setEdges] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("chatbot-flow-edges")
-      return saved ? JSON.parse(saved) : []
+      if (saved) {
+        try {
+          const parsedEdges = JSON.parse(saved)
+          // Check if parsed edges is not empty array
+          return parsedEdges.length > 0 ? parsedEdges : initialEdges
+        } catch (error) {
+          console.error("Error parsing saved edges:", error)
+          return initialEdges
+        }
+      }
+      return initialEdges
     }
-    return []
+    return initialEdges
   })
 
   const [isSimulating, setIsSimulating] = useState(false)
@@ -91,6 +112,14 @@ export default function App() {
     [setNodes]
   )
 
+  const deleteNode = useCallback(
+  (idToDelete) => {
+    setNodes((nds) => nds.filter((node) => node.id !== idToDelete))
+    setEdges((eds) => eds.filter((edge) => edge.source !== idToDelete && edge.target !== idToDelete))
+  },
+  [setNodes, setEdges]
+  )
+
   const handleContinueAndOpenSidebar = useCallback(() => {
     setIsSheetOpen(true)
   }, [])
@@ -105,7 +134,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-background">
-      {/* Sidebar */}
+      {/* Sidebar for Desktop */}
       {isDesktop && (
         <div className="w-80 h-full overflow-hidden flex-shrink-0 border-r border-border">
           <Sidebar
@@ -129,6 +158,7 @@ export default function App() {
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
           isDesktop={isDesktop}
+          deleteNode={deleteNode}
         />
 
         {/* Action buttons */}

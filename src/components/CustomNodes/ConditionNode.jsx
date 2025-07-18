@@ -1,9 +1,11 @@
 import { memo } from "react"
 import { Handle, Position } from "reactflow"
 import { Card, CardContent } from "../ui/card"
-import { GitBranch } from "lucide-react"
+import { GitBranch, Trash2 } from "lucide-react"
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "../ui/alert-dialog"
+import { Button } from "../ui/button"
 
-function ConditionNode({ data, selected }) {
+function ConditionNode({ data, selected,id, deleteNode }) {
   return (
     <div className="relative">
       <Card
@@ -17,9 +19,40 @@ function ConditionNode({ data, selected }) {
               <GitBranch className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-foreground mb-1">Condition</div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-sm font-medium text-foreground">Condition</div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the node and all its connections.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteNode(id)}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
               <div
-                className="text-xs text-muted-foreground bg-muted p-2 rounded font-mono border-dashed border hover:bg-accent transition-colors"
+                className="text-sm text-muted-foreground bg-muted p-2 rounded font-mono border-dashed border hover:bg-accent transition-colors whitespace-pre-wrap h-16 overflow-hidden"
                 title="Double-click to edit condition"
               >
                 {data.condition || "Click to define condition..."}

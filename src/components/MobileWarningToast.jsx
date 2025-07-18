@@ -5,7 +5,7 @@ import { Button } from "../components/ui/button"
 
 export default function MobileWarningToast({ onContinueAndOpenSidebar }) {
   const { toast, dismiss } = useToast()
-  const isDesktop = useMediaQuery("(min-width: 768px)")
+  const isDesktop = useMediaQuery("(min-width: 768px)") ?? window.innerWidth >= 768
   const [hasDismissed, setHasDismissed] = useState(false)
   const toastId = "mobile-warning-toast"
   const toastShownRef = useRef(false)

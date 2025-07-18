@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { X } from "lucide-react";
 import { cn } from "../../lib/utils"; 
 
@@ -29,6 +30,12 @@ const SheetContent = React.forwardRef(
   ({ className, side = "right", children, ...props }, ref) => (
     <SheetPortal>
       <SheetOverlay />
+      <DialogPrimitive.Title>
+        <VisuallyHidden>Sheet Title</VisuallyHidden>
+      </DialogPrimitive.Title>
+      <DialogPrimitive.Description>
+        <VisuallyHidden>Sheet Description</VisuallyHidden>
+      </DialogPrimitive.Description>
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
