@@ -19,7 +19,7 @@ ChatBotStudio is a modern, interactive chatbot flow builder designed to empower 
 
 Built with extensibility and testability in mind. Ideal for visual chatbot prototyping.
 
-## Development Progress
+## Development Progress - In Progress
 
 ### Phase 1: Core Functionality Implementation
 
