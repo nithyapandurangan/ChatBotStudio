@@ -2,6 +2,8 @@
 
 ChatBotStudio is a modern, interactive chatbot flow builder designed to empower users to visually design and simulate conversational flows. Built with a focus on intuitive UI and robust functionality, it's ideal for prototyping and visualizing complex chatbot interactions.
 
+<img width="2872" height="1482" alt="image" src="https://github.com/user-attachments/assets/890111f5-7588-4a84-b876-34375790045c" />
+
 ## Features
 
 - **🧱 Drag-and-Drop Node System:** Easily add and arrange conversational nodes on the canvas.
